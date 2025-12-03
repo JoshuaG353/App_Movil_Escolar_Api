@@ -1,4 +1,7 @@
-import pymysql
-pymysql.install_as_MySQLdb()
-#Esta línea registra pymysql con ese alias
-#  y evita errores de importación cuando se conecte a MySQL sin mysqlclient.
+import os
+
+# Solo usar pymysql para MySQL en desarrollo local
+# En producción (Render) con PostgreSQL, no se ejecutará
+if os.environ.get('DATABASE_URL') is None:
+    import pymysql
+    pymysql.install_as_MySQLdb()

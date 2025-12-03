@@ -1,13 +1,23 @@
 import os
+import dj_database_url
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Mantén la clave secreta en variables de entorno en producción
-SECRET_KEY = '-_&+lsebec(whhw!%n@ww&1j=4-^j_if9x8$q778+99oz&!ms2'
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY', '-_&+lsebec(whhw!%n@ww&1j=4-^j_if9x8$q778+99oz&!ms2')
 
-DEBUG = True  # en desarrollo
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
+# Hosts permitidos
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
+    ALLOWED_HOSTS.append('.onrender.com')
+
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -24,6 +34,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ← AGREGADO SEGÚN RENDER DOCS
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',     # CORS debe ir antes de CommonMiddleware
     'django.middleware.common.CommonMiddleware',
@@ -36,22 +47,11 @@ MIDDLEWARE = [
 # Configuración de CORS: define orígenes permitidos y quita CORS_ORIGIN_ALLOW_ALL
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
+    'https://app-movil-escolar-web.vercel.app',  # Tu frontend en producción
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'app_movil_escolar_api.urls'
-
-
-
-import os
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
-STATIC_URL = "/static/"
-# STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-# TEMPLATES[0]["DIRS"] = [os.path.join(BASE_DIR, "templates")]
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 TEMPLATES = [
     {
@@ -71,6 +71,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'app_movil_escolar_api.wsgi.application'
 
+
+# Database
+# ======== CONFIGURACIÓN SEGÚN RENDER DOCS ========
+
+# Configuración LOCAL por defecto (MySQL con XAMPP)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -81,6 +86,20 @@ DATABASES = {
     }
 }
 
+# SOBREESCRIBIR con PostgreSQL si hay DATABASE_URL (producción en Render)
+# Render automáticamente provee la variable DATABASE_URL
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True
+        )
+    }
+
+
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -94,8 +113,25 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+
+# Static files (CSS, JavaScript, Images)
+# ======== CONFIGURACIÓN SEGÚN RENDER DOCS ========
+
 STATIC_URL = '/static/'
 
+# Configuración para producción según Render
+if not DEBUG:
+    # Tell Django to copy static assets into a path called `staticfiles`
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    # Enable the WhiteNoise storage backend, which compresses static files
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+# Django REST Framework
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
