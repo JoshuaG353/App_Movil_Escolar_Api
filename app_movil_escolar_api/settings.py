@@ -11,7 +11,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', '-_&+lsebec(whhw!%n@ww&1j=4-^j_if9x8$q
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Configura ALLOWED_HOSTS para producción
-ALLOWED_HOSTS = ['https://app-movil-escolar-api-9x8i.onrender.com']
+ALLOWED_HOSTS = ['app-movil-escolar-api-9x8i.onrender.com']
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
